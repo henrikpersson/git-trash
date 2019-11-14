@@ -1,10 +1,12 @@
 #!/bin/bash
-currentBranch=$(git rev-parse --abbrev-ref HEAD)
+current_branch="$(git rev-parse --abbrev-ref HEAD)"
+SKIP_BRANCHES="master|${current_branch}|${SKIP_BRANCHES:-"develop|development"}"
+
 branches=()
 while IFS='' read -r line
 do
     branches+=("$line")
-done < <(git --no-pager branch --no-color --format='%(refname:short)' | grep -v -E "master|develop|development")
+done < <(git --no-pager branch --no-color --format='%(refname:short)' | grep -v -E "$SKIP_BRANCHES")
 
 trash=()
 
@@ -25,6 +27,10 @@ for branch in "${branches[@]}"; do
     echo
 done
 
+if [ "${#trash[@]}" -lt "1" ]; then
+    echo -e "\nnothing to delete"
+    exit
+fi
 
 echo -e "\nyou will delete the following local branches:"
 printf '%s\n' "${trash[@]}"
@@ -39,4 +45,3 @@ if [[ "$ans" == "trash" ]]; then
 else
   echo 'coward'
 fi
-
