@@ -5,12 +5,12 @@ trash=()
 #todo: show latest commit
 
 for branch in ${branches[@]}; do
-	echo -n "$branch [y/n]: "
-	read -n 1 ans
-	if [[ "$ans" == "y" ]]; then
-		trash+=($branch)
-	fi
-	echo
+  echo -n "$branch [y/n]: "
+  read -n 1 ans
+  if [[ "$ans" == "y" ]]; then
+    trash+=($branch)
+  fi
+  echo
 done
 
 echo -e "\nyou will delete the following local branches:"
@@ -19,10 +19,10 @@ echo; echo -n "type 'trash' to do it: "
 read ans
 
 if [[ "$ans" == "trash" ]]; then
-	for trashbranch in ${trash[@]}; do
-		git branch -D $trashbranch
-	done
-	echo 'done'
+  for trashbranch in ${trash[@]}; do
+    git branch -D $trashbranch
+  done
+  echo 'done'
 else
-	echo 'coward'
+  echo 'coward'
 fi

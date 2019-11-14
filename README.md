@@ -1,10 +1,11 @@
-# problem
+# problem
 
-`➜ git branch | wc -l
-      
-325`
+```
+➜ git branch | wc -l
+      325
+```
 
-# git-trash
+# git-trash
 
 ![trash](/trash.png?raw=true "trash")
 
