@@ -1,21 +1,26 @@
 #!/bin/bash
 currentBranch=$(git rev-parse --abbrev-ref HEAD)
-branches=($(git --no-pager branch --no-color --format='%(refname:short)' | grep -v -E "master|develop|development|$currentBranch"))
+branches=()
+while IFS='' read -r line
+do
+    branches+=("$line")
+done < <(git --no-pager branch --no-color --format='%(refname:short)' | grep -v -E "master|develop|development")
+
 trash=()
 
 handle_choice () {
     echo -n "$branch [y/n/?]: "
-    read -n 1 ans
+    read -r -n 1 ans
     if [[ "$ans" == "y" ]]; then
-        trash+=($branch)
+        trash+=("$branch")
     fi
     if [[ "$ans" == "?" ]]; then
-        git branch -vv --list $branch
+        git branch -vv --list "$branch"
         handle_choice
     fi
 }
 
-for branch in ${branches[@]}; do
+for branch in "${branches[@]}"; do
     handle_choice
     echo
 done
@@ -24,11 +29,11 @@ done
 echo -e "\nyou will delete the following local branches:"
 printf '%s\n' "${trash[@]}"
 echo; echo -n "type 'trash' to do it: "
-read ans
+read -r ans
 
 if [[ "$ans" == "trash" ]]; then
-  for trashbranch in ${trash[@]}; do
-    git branch -D $trashbranch
+  for trashbranch in "${trash[@]}"; do
+    git branch -D "$trashbranch"
   done
   echo 'done'
 else
