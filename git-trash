@@ -1,0 +1,28 @@
+#!/bin/bash
+branches=($(git --no-pager branch --no-color --format='%(refname:short)' | grep -v -E "master|develop|development"))
+trash=()
+
+#todo: show latest commit
+
+for branch in ${branches[@]}; do
+	echo -n "$branch [y/n]: "
+	read -n 1 ans
+	if [[ "$ans" == "y" ]]; then
+		trash+=($branch)
+	fi
+	echo
+done
+
+echo -e "\nyou will delete the following local branches:"
+printf '%s\n' "${trash[@]}"
+echo; echo -n "type 'trash' to do it: "
+read ans
+
+if [[ "$ans" == "trash" ]]; then
+	for trashbranch in ${trash[@]}; do
+		git branch -D $trashbranch
+	done
+	echo 'done'
+else
+	echo 'coward'
+fi
