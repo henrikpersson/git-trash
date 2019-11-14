@@ -1,5 +1,6 @@
 #!/bin/bash
-branches=($(git --no-pager branch --no-color --format='%(refname:short)' | grep -v -E "master|develop|development"))
+currentBranch=$(git rev-parse --abbrev-ref HEAD)
+branches=($(git --no-pager branch --no-color --format='%(refname:short)' | grep -v -E "master|develop|development|$currentBranch"))
 trash=()
 
 handle_choice () {
@@ -33,3 +34,4 @@ if [[ "$ans" == "trash" ]]; then
 else
   echo 'coward'
 fi
+
