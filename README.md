@@ -1,11 +1,15 @@
-# problem
+# git-trash
+
+Delete your old branches that you always forget to remove when you're done!
+
+## Problem
 
 ```sh
 ➜ git branch | wc -l
       325
 ```
 
-# git-trash
+## Solution
 
 ![trash](/trash.png?raw=true "trash")
 
