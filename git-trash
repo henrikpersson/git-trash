@@ -1,5 +1,6 @@
 #!/bin/bash
 current_branch="$(git rev-parse --abbrev-ref HEAD)"
+remote="$(git remote)"
 SKIP_BRANCHES="master|${current_branch}|${SKIP_BRANCHES:-"develop|development"}"
 
 branches=()
@@ -40,6 +41,7 @@ read -r ans
 if [[ "$ans" == "trash" ]]; then
   for trashbranch in "${trash[@]}"; do
     git branch -D "$trashbranch"
+    git remote prune ${remote}
   done
   echo 'done'
 else
