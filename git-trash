@@ -6,7 +6,7 @@ branches=()
 while IFS='' read -r line
 do
     branches+=("$line")
-done < <(git --no-pager branch --no-color --format='%(refname:short)' | grep -v -E "$SKIP_BRANCHES")
+done < <(git --no-pager branch --no-color --format='%(refname:short)' | grep -v -x -E "$SKIP_BRANCHES")
 
 trash=()
 
