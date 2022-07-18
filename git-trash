@@ -1,6 +1,6 @@
 #!/bin/bash
 current_branch="$(git rev-parse --abbrev-ref HEAD)"
-SKIP_BRANCHES="master|${current_branch}|${SKIP_BRANCHES:-"develop|development"}"
+SKIP_BRANCHES="master|main|${current_branch}|${SKIP_BRANCHES:-"develop|development"}"
 
 branches=()
 while IFS='' read -r line

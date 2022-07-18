@@ -13,8 +13,8 @@ Delete your old branches that you always forget to remove when you're done!
 
 ![trash](/trash.png?raw=true "trash")
 
-By default the current branch along with the branches `master`, `develop` and
-`development` will be ignored. The current branch and `master` can never be
+By default the current branch along with the branches `master`, `main`, `develop` and
+`development` will be ignored. The current branch, `master` and `main` can never be
 trashed but you can customize other or additional branches to ignore by setting
 `SKIP_BRANCHES`.
 
