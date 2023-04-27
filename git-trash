@@ -27,7 +27,7 @@ handle_choice () {
 
     if grep -q "gone" <<< "$tracking_status"; then
       status="$icon_remote_gone"
-    elif grep -q "ahead" <<< "$tracking_status"; then
+    elif grep -q -E "ahead|behind" <<< "$tracking_status"; then
       status="$icon_remote_diff"
     else
       status="$icon_unknown"
