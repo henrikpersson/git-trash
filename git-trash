@@ -1,23 +1,46 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 current_branch="$(git rev-parse --abbrev-ref HEAD)"
 SKIP_BRANCHES="master|main|${current_branch}|${SKIP_BRANCHES:-"develop|development"}"
 
-branches=()
-while IFS='' read -r line
-do
-    branches+=("$line")
-done < <(git --no-pager branch --no-color --format='%(refname:short)' | grep -v -x -E "$SKIP_BRANCHES")
+icon_remote_gone="󰍑"
+icon_remote_diff=""
+icon_unknown=""
+icon_info=""
 
+longest_branch_name=0
+
+branches=()
 trash=()
 
+while IFS=: read -r branch status
+do
+    if [ ${#branch} -gt "$longest_branch_name" ]; then
+      longest_branch_name=${#branch}
+    fi
+
+    branches+=("$branch:$status")
+done < <(git --no-pager branch --no-color --format='%(refname:short):%(upstream:track)' | grep -v -E "^$SKIP_BRANCHES:")
+
 handle_choice () {
-    echo -n "$branch [y/n/?]: "
+    IFS=: read -r branch_name tracking_status <<< "$branch"
+
+    if grep -q "gone" <<< "$tracking_status"; then
+      status="$icon_remote_gone"
+    elif grep -q -E "ahead|behind" <<< "$tracking_status"; then
+      status="$icon_remote_diff"
+    else
+      status="$icon_unknown"
+    fi
+
+    printf "%-s %-$longest_branch_name.${longest_branch_name}s [y/n/?]: " "$status" "$branch_name"
     read -r -n 1 ans
     if [[ "$ans" == "y" ]]; then
-        trash+=("$branch")
+        trash+=("$branch_name")
     fi
     if [[ "$ans" == "?" ]]; then
-        git branch -vv --list "$branch"
+        printf "\n  %s " "$icon_info"
+        git branch -vv --list "$branch_name"
         handle_choice
     fi
 }
