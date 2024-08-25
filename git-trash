@@ -20,7 +20,7 @@ do
     fi
 
     branches+=("$branch:$status")
-done < <(git --no-pager branch --no-color --format='%(refname:short):%(upstream:track)' | grep -v -E "^$SKIP_BRANCHES:")
+done < <(git --no-pager branch --no-color --format='%(refname:short):%(upstream:track)' | grep -v -E "^($SKIP_BRANCHES):")
 
 handle_choice () {
     IFS=: read -r branch_name tracking_status <<< "$branch"
