@@ -1,6 +1,7 @@
 # git-trash
 
-Delete your old branches that you always forget to remove when you're done!
+Delete your old branches and worktrees that you always forget to remove when
+you're done!
 
 ## Problem
 
