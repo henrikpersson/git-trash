@@ -3,27 +3,39 @@
 current_branch="$(git rev-parse --abbrev-ref HEAD)"
 SKIP_BRANCHES="master|main|${current_branch}|${SKIP_BRANCHES:-"develop|development"}"
 
+# The first entry is always the main worktree which can never be removed.
+main_worktree="$(git worktree list --porcelain | sed -n '1s/^worktree //p')"
+
 icon_remote_gone="󰍑"
 icon_remote_diff=""
 icon_unknown=""
 icon_info=""
+icon_worktree="󰙅"
 
 longest_branch_name=0
 
 branches=()
 trash=()
 
-while IFS=: read -r branch status
+# Drop stale entries for worktrees whose directory is already gone so their
+# branches can be deleted like any other.
+git worktree prune
+
+while IFS=: read -r branch status worktree
 do
+    if [ -n "$worktree" ] && [ "$worktree" == "$main_worktree" ]; then
+      continue
+    fi
+
     if [ ${#branch} -gt "$longest_branch_name" ]; then
       longest_branch_name=${#branch}
     fi
 
-    branches+=("$branch:$status")
-done < <(git --no-pager branch --no-color --format='%(refname:short):%(upstream:track)' | grep -v -E "^($SKIP_BRANCHES):")
+    branches+=("$branch:$status:$worktree")
+done < <(git --no-pager branch --no-color --format='%(refname:short):%(upstream:track):%(worktreepath)' | grep -v -E "^($SKIP_BRANCHES):")
 
 handle_choice () {
-    IFS=: read -r branch_name tracking_status <<< "$branch"
+    IFS=: read -r branch_name tracking_status worktree_path <<< "$branch"
 
     if grep -q "gone" <<< "$tracking_status"; then
       status="$icon_remote_gone"
@@ -33,10 +45,15 @@ handle_choice () {
       status="$icon_unknown"
     fi
 
-    printf "%-s %-$longest_branch_name.${longest_branch_name}s [y/n/?]: " "$status" "$branch_name"
+    worktree_status=" "
+    if [ -n "$worktree_path" ]; then
+      worktree_status="$icon_worktree"
+    fi
+
+    printf "%-s %-s %-$longest_branch_name.${longest_branch_name}s [y/n/?]: " "$status" "$worktree_status" "$branch_name"
     read -r -n 1 ans
     if [[ "$ans" == "y" ]]; then
-        trash+=("$branch_name")
+        trash+=("$branch_name:$worktree_path")
     fi
     if [[ "$ans" == "?" ]]; then
         printf "\n  %s " "$icon_info"
@@ -56,13 +73,30 @@ if [ "${#trash[@]}" -lt "1" ]; then
 fi
 
 echo -e "\nyou will delete the following local branches:"
-printf '%s\n' "${trash[@]}"
+for trashbranch in "${trash[@]}"; do
+  IFS=: read -r branch_name worktree_path <<< "$trashbranch"
+  if [ -n "$worktree_path" ]; then
+    echo "$branch_name (and worktree $worktree_path)"
+  else
+    echo "$branch_name"
+  fi
+done
+
 echo; echo -n "type 'trash' to do it: "
 read -r ans
 
 if [[ "$ans" == "trash" ]]; then
   for trashbranch in "${trash[@]}"; do
-    git branch -D "$trashbranch"
+    IFS=: read -r branch_name worktree_path <<< "$trashbranch"
+
+    # Never force the removal, a dirty worktree means there might be work
+    # left that isn't committed so keep both the worktree and the branch.
+    if [ -n "$worktree_path" ] && ! git worktree remove "$worktree_path"; then
+      echo "skipping $branch_name, could not remove worktree $worktree_path"
+      continue
+    fi
+
+    git branch -D "$branch_name"
   done
   echo 'done'
 else
