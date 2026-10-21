@@ -16,15 +16,16 @@ longest_branch_name=0
 
 branches=()
 trash=()
-
-# Drop stale entries for worktrees whose directory is already gone so their
-# branches can be deleted like any other.
-git worktree prune
+has_worktrees=false
 
 while IFS=: read -r branch status worktree
 do
     if [ -n "$worktree" ] && [ "$worktree" == "$main_worktree" ]; then
       continue
+    fi
+
+    if [ -n "$worktree" ]; then
+      has_worktrees=true
     fi
 
     if [ ${#branch} -gt "$longest_branch_name" ]; then
@@ -45,12 +46,16 @@ handle_choice () {
       status="$icon_unknown"
     fi
 
-    worktree_status=" "
-    if [ -n "$worktree_path" ]; then
-      worktree_status="$icon_worktree"
+    printf "%-s " "$status"
+    if $has_worktrees; then
+      if [ -n "$worktree_path" ]; then
+        printf "%-s " "$icon_worktree"
+      else
+        printf "  "
+      fi
     fi
 
-    printf "%-s %-s %-$longest_branch_name.${longest_branch_name}s [y/n/?]: " "$status" "$worktree_status" "$branch_name"
+    printf "%-$longest_branch_name.${longest_branch_name}s [y/n/?]: " "$branch_name"
     read -r -n 1 ans
     if [[ "$ans" == "y" ]]; then
         trash+=("$branch_name:$worktree_path")
@@ -86,18 +91,33 @@ echo; echo -n "type 'trash' to do it: "
 read -r ans
 
 if [[ "$ans" == "trash" ]]; then
+  failures=0
+
   for trashbranch in "${trash[@]}"; do
     IFS=: read -r branch_name worktree_path <<< "$trashbranch"
 
-    # Never force the removal, a dirty worktree means there might be work
-    # left that isn't committed so keep both the worktree and the branch.
+    # Never force the removal. Git refuses for dirty, locked or submodule
+    # worktrees and we keep the branch too so nothing is lost.
     if [ -n "$worktree_path" ] && ! git worktree remove "$worktree_path"; then
-      echo "skipping $branch_name, could not remove worktree $worktree_path"
+      echo "skipping $branch_name, could not remove worktree $worktree_path (see error above)"
+      failures=$((failures + 1))
       continue
     fi
 
-    git branch -D "$branch_name"
+    if ! git branch -D "$branch_name"; then
+      if [ -n "$worktree_path" ]; then
+        echo "worktree $worktree_path removed but could not delete $branch_name"
+      fi
+
+      failures=$((failures + 1))
+    fi
   done
+
+  if [ "$failures" -gt 0 ]; then
+    echo "done, but $failures branch(es) could not be trashed"
+    exit 1
+  fi
+
   echo 'done'
 else
   echo 'coward'
